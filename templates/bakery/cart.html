@@ -1,0 +1,73 @@
+{% extends 'bakery/base.html' %}
+
+{% block title %}Shopping Cart{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <h1 class="text-center mb-4">Your Cart</h1>
+    
+    {% if cart_items %}
+    <div class="row">
+        <div class="col-md-8">
+            {% for item in cart_items %}
+            <div class="card mb-3">
+                <div class="row g-0 align-items-center">
+                    <div class="col-md-3">
+                        {% if item.product.image %}
+                        <img src="{{ item.product.image.url }}" class="img-fluid rounded-start" alt="{{ item.product.name }}">
+                        {% else %}
+                        <img src="https://images.unsplash.com/photo-1558961363-fa8fdf82db35?w=150" class="img-fluid rounded-start">
+                        {% endif %}
+                    </div>
+                    <div class="col-md-9">
+                        <div class="card-body">
+                            <div class="row align-items-center">
+                                <div class="col-md-4">
+                                    <h5>{{ item.product.name }}</h5>
+                                    <p class="price">${{ item.product.price }}</p>
+                                </div>
+                                <div class="col-md-3">
+                                    <form action="{% url 'update_cart' item.id %}" method="POST" class="d-flex">
+                                        {% csrf_token %}
+                                        <input type="number" name="quantity" value="{{ item.quantity }}" min="1" class="form-control me-2" style="width: 70px;">
+                                        <button type="submit" class="btn btn-sm btn-outline-primary">Update</button>
+                                    </form>
+                                </div>
+                                <div class="col-md-3">
+                                    <p><strong>Subtotal: ${{ item.subtotal|floatformat:2 }}</strong></p>
+                                </div>
+                                <div class="col-md-2">
+                                    <a href="{% url 'remove_from_cart' item.id %}" class="btn btn-danger btn-sm">Remove</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body">
+                    <h4>Order Summary</h4>
+                    <hr>
+                    <p><strong>Total Items:</strong> {{ cart_items|length }}</p>
+                    <p><strong>Total Amount:</strong> ${{ total|floatformat:2 }}</p>
+                    <hr>
+                    <a href="{% url 'checkout' %}" class="btn btn-primary w-100">Proceed to Checkout →</a>
+                    <a href="{% url 'menu' %}" class="btn btn-outline-primary w-100 mt-2">Continue Shopping</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="text-center py-5">
+        <i class="fas fa-shopping-cart fa-4x mb-3 text-muted"></i>
+        <h3>Your cart is empty</h3>
+        <p>Looks like you haven't added any items yet.</p>
+        <a href="{% url 'menu' %}" class="btn btn-primary">Browse Menu</a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
