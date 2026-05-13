@@ -1,0 +1,173 @@
+{% extends 'bakery/base.html' %}
+
+{% block title %}Your Cart - Sugar Bites{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <h1 class="text-center mb-5" style="color: var(--warm-brown);">Your Shopping Cart</h1>
+    
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <div id="cartItems"></div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-4">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h4>Order Summary</h4>
+                    <hr>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Subtotal:</span>
+                        <span id="subtotal">$0.00</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Tax (10%):</span>
+                        <span id="tax">$0.00</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-3">
+                        <strong>Total:</strong>
+                        <strong id="total" style="color: var(--warm-brown); font-size: 1.3rem;">$0.00</strong>
+                    </div>
+                    <hr>
+                    <a href="/checkout/" class="btn btn-primary w-100" id="checkoutBtn" style="display: none;">
+                        Proceed to Checkout
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .cart-item {
+        border-bottom: 1px solid #eee;
+        padding: 15px 0;
+    }
+    .cart-item:last-child {
+        border-bottom: none;
+    }
+    .cart-item img {
+        width: 80px;
+        height: 80px;
+        object-fit: cover;
+        border-radius: 10px;
+    }
+    .quantity-input {
+        width: 60px;
+        text-align: center;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        padding: 5px;
+    }
+    .remove-item {
+        cursor: pointer;
+        color: #dc3545;
+    }
+    .remove-item:hover {
+        color: #bb2d3b;
+    }
+</style>
+
+<script>
+    function loadCart() {
+        let cart = localStorage.getItem('cart');
+        let cartItemsDiv = document.getElementById('cartItems');
+        let checkoutBtn = document.getElementById('checkoutBtn');
+        
+        if (!cart || JSON.parse(cart).length === 0) {
+            cartItemsDiv.innerHTML = `
+                <div class="text-center py-5">
+                    <i class="fas fa-shopping-cart fa-4x mb-3" style="color: #ddd;"></i>
+                    <h4>Your cart is empty</h4>
+                    <p>Looks like you haven't added any items yet.</p>
+                    <a href="/menu/" class="btn btn-primary">Browse Menu</a>
+                </div>
+            `;
+            checkoutBtn.style.display = 'none';
+            updateOrderSummary(0);
+            return;
+        }
+        
+        checkoutBtn.style.display = 'block';
+        let cartItems = JSON.parse(cart);
+        let html = '';
+        let subtotal = 0;
+        
+        for (let i = 0; i < cartItems.length; i++) {
+            let item = cartItems[i];
+            let itemTotal = item.price * item.quantity;
+            subtotal += itemTotal;
+            
+            html += `
+                <div class="cart-item" data-id="${item.id}">
+                    <div class="row align-items-center">
+                        <div class="col-3 col-md-2">
+                            <img src="https://images.unsplash.com/photo-1499636136210-6f4ee915583e?w=80" alt="${item.name}">
+                        </div>
+                        <div class="col-5 col-md-6">
+                            <h6 class="mb-0">${item.name}</h6>
+                            <small class="text-muted">$${item.price.toFixed(2)} each</small>
+                        </div>
+                        <div class="col-2">
+                            <input type="number" class="quantity-input" value="${item.quantity}" min="1" onchange="updateQuantity(${item.id}, this.value)">
+                        </div>
+                        <div class="col-2 text-end">
+                            <strong>$${itemTotal.toFixed(2)}</strong><br>
+                            <small class="remove-item" onclick="removeItem(${item.id})">
+                                <i class="fas fa-trash"></i> Remove
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        cartItemsDiv.innerHTML = html;
+        updateOrderSummary(subtotal);
+    }
+    
+    function updateQuantity(productId, newQuantity) {
+        newQuantity = parseInt(newQuantity);
+        if (newQuantity < 1) newQuantity = 1;
+        
+        let cart = localStorage.getItem('cart');
+        if (cart) {
+            let cartItems = JSON.parse(cart);
+            let itemIndex = cartItems.findIndex(item => item.id == productId);
+            
+            if (itemIndex !== -1) {
+                cartItems[itemIndex].quantity = newQuantity;
+                localStorage.setItem('cart', JSON.stringify(cartItems));
+                loadCart();
+                updateCartCount();
+            }
+        }
+    }
+    
+    function removeItem(productId) {
+        let cart = localStorage.getItem('cart');
+        if (cart) {
+            let cartItems = JSON.parse(cart);
+            let newCart = cartItems.filter(item => item.id != productId);
+            localStorage.setItem('cart', JSON.stringify(newCart));
+            loadCart();
+            updateCartCount();
+            alert('Item removed from cart!');
+        }
+    }
+    
+    function updateOrderSummary(subtotal) {
+        let tax = subtotal * 0.10;
+        let total = subtotal + tax;
+        document.getElementById('subtotal').innerText = '$' + subtotal.toFixed(2);
+        document.getElementById('tax').innerText = '$' + tax.toFixed(2);
+        document.getElementById('total').innerText = '$' + total.toFixed(2);
+    }
+    
+    document.addEventListener('DOMContentLoaded', loadCart);
+</script>
+{% endblock %}

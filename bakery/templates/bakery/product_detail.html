@@ -1,0 +1,420 @@
+{% extends 'bakery/base.html' %}
+
+{% block title %}{{ product.name }} - Sugar Bites{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row align-items-center">
+        <div class="col-lg-6 mb-4">
+            <div class="product-image-wrapper">
+                {% if product.image %}
+                    <img src="{{ product.image.url }}" alt="{{ product.name }}" class="product-image">
+                {% else %}
+                    <img src="https://images.unsplash.com/photo-1499636136210-6f4ee915583e?w=600" alt="{{ product.name }}" class="product-image">
+                {% endif %}
+                <div class="image-overlay">
+                    <i class="fas fa-search-plus"></i> View Details
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-6">
+            <div class="product-info">
+                <div class="category-badge">
+                    <span class="badge">{{ product.get_category_display }}</span>
+                    {% if product.is_best_seller %}
+                        <span class="badge best-seller">⭐ Best Seller</span>
+                    {% endif %}
+                </div>
+                <h1 class="product-title">{{ product.name }}</h1>
+                <div class="price-container">
+                    <div class="price">${{ product.price }}</div>
+                    <div class="stock-status {% if product.stock > 0 %}in-stock{% else %}out-stock{% endif %}">
+                        {% if product.stock > 0 %}
+                            <i class="fas fa-check-circle"></i> In Stock ({{ product.stock }} available)
+                        {% else %}
+                            <i class="fas fa-times-circle"></i> Out of Stock
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="description">
+                    <p>{{ product.description }}</p>
+                </div>
+                <div class="product-actions">
+                    {% if product.stock > 0 %}
+                        <button class="btn-add-to-cart" onclick="addToCart({{ product.id }}, '{{ product.name }}', {{ product.price }})">
+                            <i class="fas fa-cart-plus"></i> Add to Cart
+                            <span class="btn-overlay"></span>
+                        </button>
+                    {% else %}
+                        <button class="btn-out-of-stock" disabled>
+                            <i class="fas fa-times"></i> Out of Stock
+                        </button>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Product Image Wrapper */
+    .product-image-wrapper {
+        position: relative;
+        border-radius: 30% 70% 70% 30% / 30% 30% 70% 70%;
+        overflow: hidden;
+        animation: morphShape 10s ease-in-out infinite;
+        box-shadow: 0 30px 50px rgba(0,0,0,0.2);
+        max-width: 500px;
+        margin: 0 auto;
+        cursor: pointer;
+        transition: all 0.5s ease;
+    }
+    
+    .product-image-wrapper:hover {
+        transform: scale(1.02);
+        box-shadow: 0 40px 60px rgba(0,0,0,0.25);
+    }
+    
+    .product-image {
+        width: 100%;
+        height: auto;
+        display: block;
+        transition: transform 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    }
+    
+    .product-image-wrapper:hover .product-image {
+        transform: scale(1.1);
+    }
+    
+    /* Image Overlay */
+    .image-overlay {
+        position: absolute;
+        bottom: -50px;
+        left: 0;
+        right: 0;
+        background: linear-gradient(to top, rgba(139, 90, 43, 0.9), transparent);
+        color: white;
+        text-align: center;
+        padding: 20px;
+        transition: bottom 0.4s ease;
+        font-size: 14px;
+    }
+    
+    .product-image-wrapper:hover .image-overlay {
+        bottom: 0;
+    }
+    
+    /* Morph Animation */
+    @keyframes morphShape {
+        0% {
+            border-radius: 30% 70% 70% 30% / 30% 30% 70% 70%;
+        }
+        25% {
+            border-radius: 58% 42% 75% 25% / 76% 46% 54% 24%;
+        }
+        50% {
+            border-radius: 50% 50% 50% 50% / 60% 40% 60% 40%;
+        }
+        75% {
+            border-radius: 45% 55% 40% 60% / 40% 55% 45% 60%;
+        }
+        100% {
+            border-radius: 30% 70% 70% 30% / 30% 30% 70% 70%;
+        }
+    }
+    
+    /* Product Info Animation */
+    .product-info {
+        animation: slideIn 0.8s ease-out;
+    }
+    
+    @keyframes slideIn {
+        from {
+            opacity: 0;
+            transform: translateX(50px);
+        }
+        to {
+            opacity: 1;
+            transform: translateX(0);
+        }
+    }
+    
+    /* Category Badge */
+    .category-badge {
+        margin-bottom: 20px;
+    }
+    
+    .category-badge .badge {
+        background: linear-gradient(135deg, var(--warm-brown), #6B4220);
+        color: white;
+        padding: 8px 20px;
+        border-radius: 30px;
+        font-size: 0.9rem;
+        font-weight: 500;
+        margin-right: 10px;
+    }
+    
+    .category-badge .best-seller {
+        background: linear-gradient(135deg, var(--gold), #E6B800);
+        color: #333;
+    }
+    
+    /* Product Title */
+    .product-title {
+        font-size: 2.8rem;
+        font-weight: 700;
+        color: var(--warm-brown);
+        margin-bottom: 20px;
+        position: relative;
+        display: inline-block;
+    }
+    
+    .product-title::after {
+        content: '';
+        position: absolute;
+        bottom: -10px;
+        left: 0;
+        width: 60px;
+        height: 3px;
+        background: linear-gradient(90deg, var(--gold), transparent);
+        animation: expandWidth 0.6s ease-out;
+    }
+    
+    @keyframes expandWidth {
+        from {
+            width: 0;
+        }
+        to {
+            width: 60px;
+        }
+    }
+    
+    /* Price Container */
+    .price-container {
+        display: flex;
+        align-items: center;
+        gap: 20px;
+        margin: 25px 0;
+        flex-wrap: wrap;
+    }
+    
+    .price {
+        font-size: 2.5rem;
+        font-weight: 800;
+        color: var(--caramel);
+        background: linear-gradient(135deg, var(--caramel), #A0622B);
+        background-clip: text;
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        animation: pulse 2s infinite;
+    }
+    
+    @keyframes pulse {
+        0%, 100% {
+            opacity: 1;
+        }
+        50% {
+            opacity: 0.8;
+        }
+    }
+    
+    .stock-status {
+        padding: 8px 16px;
+        border-radius: 30px;
+        font-size: 0.9rem;
+        font-weight: 500;
+    }
+    
+    .stock-status.in-stock {
+        background-color: #d4edda;
+        color: #155724;
+    }
+    
+    .stock-status.out-stock {
+        background-color: #f8d7da;
+        color: #721c24;
+    }
+    
+    /* Description */
+    .description {
+        margin: 25px 0;
+        padding: 20px;
+        background: var(--cream);
+        border-radius: 15px;
+        border-left: 4px solid var(--gold);
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    
+    .description:hover {
+        transform: translateX(5px);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+    
+    .description p {
+        margin: 0;
+        line-height: 1.8;
+        color: var(--dark-gray);
+    }
+    
+    /* Add to Cart Button */
+    .product-actions {
+        margin-top: 30px;
+    }
+    
+    .btn-add-to-cart {
+        position: relative;
+        background: linear-gradient(135deg, var(--warm-brown), #6B4220);
+        color: white;
+        border: none;
+        padding: 16px 40px;
+        border-radius: 50px;
+        font-size: 1.1rem;
+        font-weight: 600;
+        cursor: pointer;
+        overflow: hidden;
+        transition: all 0.3s ease;
+        width: 100%;
+        max-width: 300px;
+    }
+    
+    .btn-add-to-cart i {
+        margin-right: 10px;
+        transition: transform 0.3s ease;
+    }
+    
+    .btn-add-to-cart:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 10px 25px rgba(139, 90, 43, 0.3);
+    }
+    
+    .btn-add-to-cart:hover i {
+        transform: translateX(5px);
+    }
+    
+    .btn-add-to-cart:active {
+        transform: translateY(0);
+    }
+    
+    .btn-overlay {
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+        transition: left 0.5s ease;
+    }
+    
+    .btn-add-to-cart:hover .btn-overlay {
+        left: 100%;
+    }
+    
+    .btn-out-of-stock {
+        background: #6c757d;
+        color: white;
+        border: none;
+        padding: 16px 40px;
+        border-radius: 50px;
+        font-size: 1.1rem;
+        font-weight: 600;
+        cursor: not-allowed;
+        width: 100%;
+        max-width: 300px;
+    }
+    
+    /* Responsive */
+    @media (max-width: 768px) {
+        .product-title {
+            font-size: 2rem;
+        }
+        
+        .price {
+            font-size: 1.8rem;
+        }
+        
+        .product-image-wrapper {
+            max-width: 350px;
+            margin-bottom: 30px;
+        }
+    }
+    
+    @media (max-width: 576px) {
+        .product-title {
+            font-size: 1.6rem;
+        }
+        
+        .price {
+            font-size: 1.5rem;
+        }
+        
+        .product-image-wrapper {
+            max-width: 280px;
+        }
+        
+        .btn-add-to-cart {
+            padding: 12px 30px;
+            font-size: 1rem;
+        }
+    }
+</style>
+
+<script>
+    // Add smooth scroll to top when page loads
+    window.addEventListener('load', function() {
+        window.scrollTo({
+            top: 0,
+            behavior: 'smooth'
+        });
+    });
+    
+    // Add ripple effect to button
+    document.querySelectorAll('.btn-add-to-cart').forEach(button => {
+        button.addEventListener('click', function(e) {
+            let ripple = document.createElement('span');
+            ripple.classList.add('ripple');
+            this.appendChild(ripple);
+            
+            let x = e.clientX - e.target.offsetLeft;
+            let y = e.clientY - e.target.offsetTop;
+            
+            ripple.style.left = `${x}px`;
+            ripple.style.top = `${y}px`;
+            
+            setTimeout(() => {
+                ripple.remove();
+            }, 600);
+        });
+    });
+</script>
+
+<style>
+    /* Ripple effect for button */
+    .btn-add-to-cart {
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .ripple {
+        position: absolute;
+        border-radius: 50%;
+        background-color: rgba(255, 255, 255, 0.6);
+        width: 100px;
+        height: 100px;
+        margin-top: -50px;
+        margin-left: -50px;
+        animation: ripple 0.6s linear;
+        pointer-events: none;
+    }
+    
+    @keyframes ripple {
+        0% {
+            transform: scale(0);
+            opacity: 0.5;
+        }
+        100% {
+            transform: scale(4);
+            opacity: 0;
+        }
+    }
+</style>
+{% endblock %}

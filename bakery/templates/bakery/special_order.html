@@ -1,0 +1,98 @@
+{% extends 'bakery/base.html' %}
+
+{% block title %}Special Order - Sugar Bites{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card shadow-sm">
+                <div class="card-body p-5">
+                    <h1 class="text-center mb-4" style="color: var(--warm-brown);">Custom Special Order</h1>
+                    <p class="text-center mb-4">Want something not on our menu? Fill out this form and we'll create something special just for you!</p>
+                    
+                    <form method="POST" action="/special-order/">
+                        {% csrf_token %}
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Full Name *</label>
+                                <input type="text" name="name" class="form-control" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Email Address *</label>
+                                <input type="email" name="email" class="form-control" required>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Phone Number *</label>
+                            <input type="tel" name="phone" class="form-control" required>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Delivery Option *</label>
+                            <select name="delivery_option" class="form-select" id="deliveryOption" required>
+                                <option value="">Select option...</option>
+                                <option value="pickup">Pickup (Free)</option>
+                                <option value="delivery">Delivery ($5.99)</option>
+                            </select>
+                        </div>
+                        
+                        <div id="addressFields" style="display: none;">
+                            <div class="mb-3">
+                                <label class="form-label">Street Address</label>
+                                <textarea name="address" class="form-control" rows="2"></textarea>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">City</label>
+                                    <input type="text" name="city" class="form-control">
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Zip Code</label>
+                                    <input type="text" name="zip_code" class="form-control">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Describe Your Custom Order *</label>
+                            <textarea name="items_requested" class="form-control" rows="5" 
+                                placeholder="Example: I'd like a gluten-free chocolate cake with strawberry filling and buttercream frosting. Serves 8-10 people." required></textarea>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-primary w-100">Submit Special Order</button>
+                    </form>
+                </div>
+            </div>
+            
+            <div class="card mt-4">
+                <div class="card-body">
+                    <h5 class="mb-3">What Happens Next?</h5>
+                    <div class="row text-center">
+                        <div class="col-md-4 mb-3">
+                            <i class="fas fa-envelope fa-2x" style="color: var(--warm-brown);"></i>
+                            <p class="mt-2"><strong>1. Submit Form</strong><br>We'll receive your request</p>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <i class="fas fa-phone-alt fa-2x" style="color: var(--warm-brown);"></i>
+                            <p class="mt-2"><strong>2. We'll Contact You</strong><br>Within 24 hours</p>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <i class="fas fa-birthday-cake fa-2x" style="color: var(--warm-brown);"></i>
+                            <p class="mt-2"><strong>3. Enjoy!</strong><br>We'll create your dessert</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.getElementById('deliveryOption').addEventListener('change', function() {
+        let addressFields = document.getElementById('addressFields');
+        addressFields.style.display = this.value === 'delivery' ? 'block' : 'none';
+    });
+</script>
+{% endblock %}

@@ -1,241 +1,188 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib.auth import login, authenticate, logout
-from django.contrib.auth.forms import UserCreationForm
-from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from django.core.mail import send_mail
-from django.conf import settings
-import json
+from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth.models import User
 from .models import Product, CartOrder, SpecialOrder, ContactMessage, Feedback
-from .forms import SpecialOrderForm, ContactForm, FeedbackForm, CheckoutForm, SignUpForm
+from .forms import ContactForm, FeedbackForm, SpecialOrderForm
+import json
+from decimal import Decimal
 
-# Home Page
 def home(request):
-    # Check for logout success message
-    logout_message = request.GET.get('logout')
-    if logout_message == 'success':
-        messages.success(request, '✅ You have been logged out successfully! Come back soon! 🍰')
-    
-    best_sellers = Product.objects.filter(is_best_seller=True)[:4]
-    return render(request, 'bakery/home.html', {
-        'best_sellers': best_sellers
-    })
+    best_sellers = Product.objects.filter(is_best_seller=True)[:6]
+    return render(request, 'bakery/home.html', {'best_sellers': best_sellers})
 
-# Menu Page
 def menu(request):
-    products = Product.objects.all()
-    categories = ['cookies', 'lattes', 'waffles']
-    
     category = request.GET.get('category')
-    if category and category in categories:
-        products = products.filter(category=category)
-    
-    return render(request, 'bakery/menu.html', {
-        'products': products,
-        'selected_category': category,
-        'categories': categories
-    })
-
-# Product Detail Page
-def product_detail(request, product_id):
-    product = get_object_or_404(Product, id=product_id)
-    return render(request, 'bakery/product_detail.html', {'product': product})
-
-# Cart View
-def cart_view(request):
-    cart = request.session.get('cart', {})
-    cart_items = []
-    total = 0
-    
-    for product_id, item in cart.items():
-        product = Product.objects.get(id=int(product_id))
-        subtotal = product.price * item['quantity']
-        total += subtotal
-        cart_items.append({
-            'id': product_id,
-            'product': product,
-            'quantity': item['quantity'],
-            'subtotal': subtotal
-        })
-    
-    return render(request, 'bakery/cart.html', {
-        'cart_items': cart_items,
-        'total': total
-    })
-
-# Add to Cart
-def add_to_cart(request, product_id):
-    product = get_object_or_404(Product, id=product_id)
-    cart = request.session.get('cart', {})
-    
-    product_id_str = str(product_id)
-    if product_id_str in cart:
-        cart[product_id_str]['quantity'] += 1
+    if category:
+        products = Product.objects.filter(category=category)
     else:
-        cart[product_id_str] = {
-            'quantity': 1,
-            'price': str(product.price)
-        }
-    
-    request.session['cart'] = cart
-    messages.success(request, f'{product.name} added to cart!')
-    return redirect('cart')
+        products = Product.objects.all()
+    return render(request, 'bakery/menu.html', {'products': products})
 
-# Update Cart
-def update_cart(request, item_id):
+def about(request):
+    return render(request, 'bakery/about.html')
+
+def contact(request):
     if request.method == 'POST':
-        quantity = int(request.POST.get('quantity', 1))
-        cart = request.session.get('cart', {})
-        
-        if str(item_id) in cart:
-            if quantity > 0:
-                cart[str(item_id)]['quantity'] = quantity
+        if 'contact_submit' in request.POST:
+            name = request.POST.get('name')
+            email = request.POST.get('email')
+            message = request.POST.get('message')
+            
+            if name and email and message:
+                ContactMessage.objects.create(
+                    name=name,
+                    email=email,
+                    message=message
+                )
+                messages.success(request, 'Thank you for your message! We\'ll get back to you soon.')
             else:
-                del cart[str(item_id)]
+                messages.error(request, 'Please fill all fields.')
         
-        request.session['cart'] = cart
-        messages.success(request, 'Cart updated successfully!')
+        elif 'feedback_submit' in request.POST:
+            name = request.POST.get('feedback_name')
+            rating = request.POST.get('rating')
+            feedback_text = request.POST.get('feedback')
+            
+            if name and rating and feedback_text:
+                Feedback.objects.create(
+                    name=name,
+                    rating=int(rating),
+                    feedback=feedback_text,
+                    user=request.user if request.user.is_authenticated else None
+                )
+                messages.success(request, 'Thank you for your feedback!')
+            else:
+                messages.error(request, 'Please fill all feedback fields.')
+        
+        return redirect('contact')
     
-    return redirect('cart')
+    all_feedback = Feedback.objects.all().order_by('-created_at')[:10]
+    return render(request, 'bakery/contact.html', {'feedbacks': all_feedback})
 
-# Remove from Cart
-def remove_from_cart(request, item_id):
-    cart = request.session.get('cart', {})
-    
-    if str(item_id) in cart:
-        del cart[str(item_id)]
-    
-    request.session['cart'] = cart
-    messages.success(request, 'Item removed from cart!')
-    return redirect('cart')
+def cart(request):
+    return render(request, 'bakery/cart.html')
 
-# Checkout
 def checkout(request):
-    cart = request.session.get('cart', {})
-    
-    if not cart:
-        messages.warning(request, 'Your cart is empty!')
-        return redirect('menu')
-    
-    cart_items = []
-    total = 0
-    
-    for product_id, item in cart.items():
-        product = Product.objects.get(id=int(product_id))
-        subtotal = product.price * item['quantity']
-        total += subtotal
-        cart_items.append({
-            'product': product,
-            'quantity': item['quantity'],
-            'subtotal': subtotal
-        })
-    
     if request.method == 'POST':
-        form = CheckoutForm(request.POST)
-        if form.is_valid():
-            order = form.save(commit=False)
-            order.items_json = json.dumps(cart)
-            order.total_amount = total
-            order.save()
+        try:
+            customer_name = request.POST.get('customer_name')
+            email = request.POST.get('email')
+            phone = request.POST.get('phone')
+            address = request.POST.get('address')
+            city = request.POST.get('city')
+            zip_code = request.POST.get('zip_code')
+            cart_items = request.POST.get('cart_items', '{}')
+            total_amount = request.POST.get('total_amount', 0)
             
-            # Clear cart after order
-            request.session['cart'] = {}
+            if isinstance(total_amount, str):
+                total_amount = Decimal(total_amount)
             
-            messages.success(request, 'Order placed successfully! Thank you for shopping with us!')
-            return redirect('order_confirmation', order_id=order.id)
-    else:
-        form = CheckoutForm()
+            order = CartOrder.objects.create(
+                user=request.user if request.user.is_authenticated else None,
+                customer_name=customer_name,
+                email=email,
+                phone=phone,
+                address=address,
+                city=city,
+                zip_code=zip_code,
+                items_json=cart_items,
+                total_amount=total_amount,
+                status='pending'
+            )
+            
+            messages.success(request, f'Order #{order.id} placed successfully! Thank you for your purchase.')
+            return redirect('home')
+            
+        except Exception as e:
+            messages.error(request, f'Error placing order: {str(e)}')
+            return redirect('cart')
     
-    return render(request, 'bakery/checkout.html', {
-        'form': form,
-        'cart_items': cart_items,
-        'total': total
-    })
+    return render(request, 'bakery/checkout.html')
 
-# Order Confirmation
-def order_confirmation(request, order_id):
-    order = get_object_or_404(CartOrder, id=order_id)
-    items = json.loads(order.items_json)
-    
-    order_items = []
-    for product_id, item in items.items():
-        product = Product.objects.get(id=int(product_id))
-        order_items.append({
-            'product': product,
-            'quantity': item['quantity']
-        })
-    
-    return render(request, 'bakery/order_confirmation.html', {
-        'order': order,
-        'order_items': order_items
-    })
-
-# Special Order
 def special_order(request):
     if request.method == 'POST':
         form = SpecialOrderForm(request.POST)
         if form.is_valid():
             special_order = form.save()
-            
-            # Send email notification (optional)
-            send_mail(
-                f'Special Order from {special_order.name}',
-                f"Name: {special_order.name}\nEmail: {special_order.email}\nPhone: {special_order.phone}\nDelivery: {special_order.delivery_option}\nItems Requested: {special_order.items_requested}",
-                settings.DEFAULT_FROM_EMAIL,
-                [settings.DEFAULT_FROM_EMAIL] if settings.DEFAULT_FROM_EMAIL else ['admin@example.com'],
-                fail_silently=True,
-            )
-            
-            messages.success(request, 'Your special order has been submitted! We will contact you soon.')
+            messages.success(request, 'Your special order request has been submitted! We will contact you within 24 hours.')
             return redirect('home')
+        else:
+            for error in form.errors.values():
+                messages.error(request, error)
     else:
         form = SpecialOrderForm()
     
     return render(request, 'bakery/special_order.html', {'form': form})
 
-# About Page
-def about(request):
-    return render(request, 'bakery/about.html')
-
-# Contact Page
-def contact(request):
+def login_view(request):
     if request.method == 'POST':
-        form = FeedbackForm(request.POST)
-        if form.is_valid():
-            form.save()
-            messages.success(request, 'Thank you for your feedback! We appreciate it.')
-            return redirect('contact')
-    else:
-        form = FeedbackForm()
-    
-    feedbacks = Feedback.objects.all().order_by('-created_at')
-    
-    return render(request, 'bakery/contact.html', {
-        'form': form,
-        'feedbacks': feedbacks
-    })
-
-# Sign Up
-def signup(request):
-    if request.method == 'POST':
-        form = SignUpForm(request.POST)
-        if form.is_valid():
-            user = form.save()
+        username = request.POST.get('username')
+        password = request.POST.get('password')
+        
+        if not username or not password:
+            messages.error(request, 'Please enter both username and password.')
+            return redirect('login')
+        
+        user = authenticate(request, username=username, password=password)
+        if user is not None:
             login(request, user)
-            messages.success(request, f'Welcome {user.first_name}! Your account has been created successfully.')
+            messages.success(request, f'Welcome back, {username}!')
             return redirect('home')
-    else:
-        form = SignUpForm()
-    
-    return render(request, 'bakery/registration/signup.html', {'form': form})
+        else:
+            messages.error(request, 'Invalid username or password. Please try again.')
+            return redirect('login')
+    return render(request, 'bakery/registration/login.html')
 
-# Custom Logout Function with Message
-def custom_logout(request):
-    # Get username before logout
-    username = request.user.username if request.user.is_authenticated else ''
+def signup_view(request):
+    if request.method == 'POST':
+        username = request.POST.get('username')
+        password1 = request.POST.get('password1')
+        password2 = request.POST.get('password2')
+        
+        if not username or not password1 or not password2:
+            messages.error(request, 'Please fill all fields.')
+            return redirect('signup')
+        
+        if password1 != password2:
+            messages.error(request, 'Passwords do not match.')
+            return redirect('signup')
+        
+        if len(password1) < 8:
+            messages.error(request, 'Password must be at least 8 characters long.')
+            return redirect('signup')
+        
+        if User.objects.filter(username=username).exists():
+            messages.error(request, 'Username already exists. Please choose another.')
+            return redirect('signup')
+        
+        try:
+            user = User.objects.create_user(username=username, password=password1)
+            login(request, user)
+            messages.success(request, f'Account created successfully! Welcome {username}!')
+            return redirect('home')
+        except Exception as e:
+            messages.error(request, f'Error creating account: {str(e)}')
+            return redirect('signup')
     
-    # Logout the user
+    return render(request, 'bakery/registration/signup.html')
+
+def logout_view(request):
     logout(request)
-    
-    # Redirect with a query parameter to show message
-    return redirect('/?logout=success')
+    messages.success(request, 'You have been logged out.')
+    return redirect('home')
+
+@login_required
+def profile(request):
+    user = request.user
+    orders = CartOrder.objects.filter(user=user).order_by('-created_at')
+    return render(request, 'bakery/profile.html', {'user': user, 'orders': orders})
+
+def product_detail(request, product_id):
+    product = get_object_or_404(Product, id=product_id)
+    return render(request, 'bakery/product_detail.html', {'product': product})
+
+def order_confirmation(request, order_id):
+    order = get_object_or_404(CartOrder, id=order_id)
+    return render(request, 'bakery/order_confirmation.html', {'order': order})

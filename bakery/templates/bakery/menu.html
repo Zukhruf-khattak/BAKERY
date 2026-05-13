@@ -1,0 +1,54 @@
+{% extends 'bakery/base.html' %}
+
+{% block title %}Our Menu{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <h1 class="text-center mb-5" style="color: var(--warm-brown);">Our Delicious Menu</h1>
+    
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="d-flex flex-wrap gap-2 justify-content-center">
+                <a href="/menu/" class="btn btn-outline-primary">📋 All</a>
+                <a href="/menu/?category=cookies" class="btn btn-outline-primary">🍪 Cookies</a>
+                <a href="/menu/?category=lattes" class="btn btn-outline-primary">☕ Lattes</a>
+                <a href="/menu/?category=waffles" class="btn btn-outline-primary">🧇 Waffles</a>
+                <a href="/menu/?category=cakes" class="btn btn-outline-primary">🎂 Cakes</a>
+                <a href="/menu/?category=drinks" class="btn btn-outline-primary">🥤 Drinks</a>
+                <a href="/menu/?category=pastries" class="btn btn-outline-primary">🥐 Pastries</a>
+                <a href="/menu/?category=breads" class="btn btn-outline-primary">🍞 Breads</a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row g-4">
+        {% for product in products %}
+        <div class="col-md-4 col-lg-3">
+            <div class="card product-card h-100">
+                <a href="/product/{{ product.id }}/">
+                    {% if product.image %}
+                        <img src="{{ product.image.url }}" class="card-img-top" alt="{{ product.name }}" style="height: 200px; object-fit: cover;">
+                    {% else %}
+                        <img src="https://images.unsplash.com/photo-1499636136210-6f4ee915583e?w=400" class="card-img-top" alt="{{ product.name }}" style="height: 200px; object-fit: cover;">
+                    {% endif %}
+                </a>
+                <div class="card-body">
+                    <a href="/product/{{ product.id }}/" style="text-decoration: none; color: inherit;">
+                        <h4>{{ product.get_category_icon }} {{ product.name }}</h4>
+                    </a>
+                    <p class="text-muted">{{ product.description|truncatewords:12 }}</p>
+                    <div class="price">${{ product.price }}</div>
+                    <button class="btn btn-primary mt-3 w-100" onclick="addToCart({{ product.id }}, '{{ product.name }}', {{ product.price }})">
+                        <i class="fas fa-cart-plus"></i> Add to Cart
+                    </button>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-12 text-center">
+            <p>No products available yet.</p>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

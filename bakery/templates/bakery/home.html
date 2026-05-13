@@ -1,0 +1,247 @@
+{% extends 'bakery/base.html' %}
+{% load static %}
+
+{% block title %}Home - Delicious Bakery Treats{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="hero">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-lg-6 mb-4 mb-lg-0">
+                <h1>Deliver You A Blissful Dessert In Every Bite</h1>
+                <p class="lead">Freshly baked cookies, creamy lattes, crispy waffles, delicious cakes, and refreshing drinks made with love and the finest ingredients.</p>
+                <div class="mt-4">
+                    <a href="/about/" class="btn btn-primary me-3">About Us</a>
+                    <a href="/menu/" class="btn btn-outline-primary">Check Out Our Best Sellers</a>
+                </div>
+            </div>
+            <div class="col-lg-6">
+                <div class="hero-image-wrapper">
+                    <img src="https://images.unsplash.com/photo-1558961363-fa8fdf82db35?w=600" alt="Bakery" class="hero-image">
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+
+<!-- Categories Section -->
+<section class="py-5">
+    <div class="container">
+        <h2 class="text-center mb-5" style="color: var(--warm-brown);">Our Specialties</h2>
+        <div class="row g-4">
+            <div class="col-md-4 col-lg-2">
+                <div class="card category-card text-center">
+                    <img src="https://images.unsplash.com/photo-1499636136210-6f4ee915583e?w=400" class="card-img-top" alt="Cookies">
+                    <div class="card-body">
+                        <h4>🍪 Cookies</h4>
+                        <a href="/menu/?category=cookies" class="btn btn-primary btn-sm">Shop Now</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 col-lg-2">
+                <div class="card category-card text-center">
+                    <img src="https://images.unsplash.com/photo-1461023058943-07fcbe16d735?w=400" class="card-img-top" alt="Lattes">
+                    <div class="card-body">
+                        <h4>☕ Lattes</h4>
+                        <a href="/menu/?category=lattes" class="btn btn-primary btn-sm">Shop Now</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 col-lg-2">
+                <div class="card category-card text-center">
+                    <img src="https://images.unsplash.com/photo-1484723091739-30a097e8f929?w=400" class="card-img-top" alt="Waffles">
+                    <div class="card-body">
+                        <h4>🧇 Waffles</h4>
+                        <a href="/menu/?category=waffles" class="btn btn-primary btn-sm">Shop Now</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 col-lg-2">
+                <div class="card category-card text-center">
+                    <img src="https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=400" class="card-img-top" alt="Cakes">
+                    <div class="card-body">
+                        <h4>🎂 Cakes</h4>
+                        <a href="/menu/?category=cakes" class="btn btn-primary btn-sm">Shop Now</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 col-lg-2">
+                <div class="card category-card text-center">
+                    <img src="https://images.unsplash.com/photo-1509440159596-0249088772ff?w=400" class="card-img-top" alt="Pastries">
+                    <div class="card-body">
+                        <h4>🥐 Pastries</h4>
+                        <a href="/menu/?category=pastries" class="btn btn-primary btn-sm">Shop Now</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 col-lg-2">
+                <div class="card category-card text-center">
+                    <img src="https://images.unsplash.com/photo-1509440159596-0249088772ff?w=400" class="card-img-top" alt="Breads">
+                    <div class="card-body">
+                        <h4>🍞 Breads</h4>
+                        <a href="/menu/?category=breads" class="btn btn-primary btn-sm">Shop Now</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+           
+
+<!-- Best Sellers Section -->
+<section class="py-5" style="background-color: var(--cream);">
+    <div class="container">
+        <h2 class="text-center mb-5" style="color: var(--warm-brown);">🔥 Best Sellers</h2>
+        <div class="row g-4">
+            {% for product in best_sellers %}
+            <div class="col-md-4">
+                <div class="card product-card h-100">
+                    {% if product.image %}
+                        <img src="{{ product.image.url }}" class="card-img-top" alt="{{ product.name }}" style="height: 200px; object-fit: cover;">
+                    {% else %}
+                        <img src="https://images.unsplash.com/photo-1499636136210-6f4ee915583e?w=400" class="card-img-top" alt="{{ product.name }}" style="height: 200px; object-fit: cover;">
+                    {% endif %}
+                    <div class="card-body">
+                        <h4>{{ product.get_category_icon }} {{ product.name }}</h4>
+                        <p class="text-muted">{{ product.description|truncatewords:10 }}</p>
+                        <div class="price">${{ product.price }}</div>
+                        <button class="btn btn-primary mt-3 w-100" onclick="addToCart({{ product.id }}, '{{ product.name }}', {{ product.price }})">
+                            <i class="fas fa-cart-plus"></i> Add to Cart
+                        </button>
+                    </div>
+                </div>
+            </div>
+            {% empty %}
+            <div class="col-12 text-center">
+                <p>No products available yet. Please check back soon!</p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<!-- About Us Preview -->
+<section class="py-5">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-lg-6 mb-4">
+                <div class="about-image-wrapper">
+                    <img src="https://images.unsplash.com/photo-1555507036-ab1f4038808a?w=600" alt="Bakery interior" class="about-image">
+                </div>
+            </div>
+            <div class="col-lg-6">
+                <h2 style="color: var(--warm-brown);">Our Mission & Promise</h2>
+                <div class="mt-4">
+                    <h4><i class="fas fa-heart" style="color: var(--gold);"></i> Our Mission</h4>
+                    <p>To spread joy through freshly baked goods made with love, quality ingredients, and a passion for perfection.</p>
+                </div>
+                <div class="mt-4">
+                    <h4><i class="fas fa-handshake" style="color: var(--gold);"></i> Our Promise</h4>
+                    <p>Every item is baked fresh daily, using only the finest ingredients. Your satisfaction is our sweetest reward.</p>
+                </div>
+                <a href="/about/" class="btn btn-primary mt-3">Learn More About Us</a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Special Order CTA -->
+<section class="py-5" style="background-color: var(--cream);">
+    <div class="container text-center">
+        <h2 style="color: var(--warm-brown);">Want Something Special?</h2>
+        <p class="lead mb-4">Can't find what you're looking for? Create your own custom dessert!</p>
+        <a href="/special-order/" class="btn btn-primary btn-lg">Place a Special Order</a>
+    </div>
+</section>
+
+<!-- Visit Information -->
+<section class="py-4 text-center" style="background-color: var(--light-cream);">
+    <div class="container">
+        <h3 style="color: var(--warm-brown);">Visit Our Bakery</h3>
+        <p><i class="fas fa-map-marker-alt"></i> <strong>Address:</strong> 9 Broadway, New York, USA</p>
+        <p><i class="fas fa-phone"></i> <strong>Phone:</strong> +1-800-123-4567</p>
+        <p><i class="fas fa-clock"></i> <strong>Hours:</strong> Monday - Sunday: 9:00 AM - 9:00 PM</p>
+    </div>
+</section>
+
+<style>
+    .hero-image-wrapper {
+        border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%;
+        overflow: hidden;
+        animation: morph 8s ease-in-out infinite;
+        box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+        max-width: 500px;
+        margin: 0 auto;
+    }
+    
+    .hero-image {
+        width: 100%;
+        height: auto;
+        display: block;
+        transition: transform 0.5s ease;
+    }
+    
+    .hero-image-wrapper:hover .hero-image {
+        transform: scale(1.05);
+    }
+    
+    @keyframes morph {
+        0% {
+            border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%;
+        }
+        50% {
+            border-radius: 30% 60% 70% 40% / 50% 60% 30% 60%;
+        }
+        100% {
+            border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%;
+        }
+    }
+    
+    .about-image-wrapper {
+        border-radius: 30% 70% 70% 30% / 30% 30% 70% 70%;
+        overflow: hidden;
+        animation: morphAbout 10s ease-in-out infinite;
+        box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+        max-width: 500px;
+        margin: 0 auto;
+    }
+    
+    .about-image {
+        width: 100%;
+        height: auto;
+        display: block;
+        transition: transform 0.5s ease;
+    }
+    
+    .about-image-wrapper:hover .about-image {
+        transform: scale(1.05);
+    }
+    
+    @keyframes morphAbout {
+        0% {
+            border-radius: 30% 70% 70% 30% / 30% 30% 70% 70%;
+        }
+        50% {
+            border-radius: 70% 30% 50% 50% / 40% 60% 40% 60%;
+        }
+        100% {
+            border-radius: 30% 70% 70% 30% / 30% 30% 70% 70%;
+        }
+    }
+    
+    @media (max-width: 768px) {
+        .hero-image-wrapper, .about-image-wrapper {
+            max-width: 350px;
+            margin-bottom: 30px;
+        }
+    }
+    
+    @media (max-width: 576px) {
+        .hero-image-wrapper, .about-image-wrapper {
+            max-width: 280px;
+        }
+    }
+</style>
+{% endblock %}

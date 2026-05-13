@@ -1,0 +1,229 @@
+{% extends 'bakery/base.html' %}
+
+{% block title %}Contact Us - Sugar Bites{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="hero">
+    <div class="container">
+        <div class="row justify-content-center text-center">
+            <div class="col-lg-8">
+                <h1 style="color: var(--warm-brown);">Contact Us</h1>
+                <p class="lead">We'd love to hear from you! Get in touch with us anytime.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Contact Information -->
+<section class="py-5">
+    <div class="container">
+        <div class="row g-4">
+            <div class="col-md-4">
+                <div class="card text-center h-100 border-0 shadow-sm">
+                    <div class="card-body p-4">
+                        <i class="fas fa-map-marker-alt fa-3x mb-3" style="color: var(--warm-brown);"></i>
+                        <h4>Visit Us</h4>
+                        <p>9 Broadway<br>New York, USA</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card text-center h-100 border-0 shadow-sm">
+                    <div class="card-body p-4">
+                        <i class="fas fa-phone fa-3x mb-3" style="color: var(--warm-brown);"></i>
+                        <h4>Call Us</h4>
+                        <p>+1-800-123-4567<br>Mon-Sun: 9am - 9pm</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card text-center h-100 border-0 shadow-sm">
+                    <div class="card-body p-4">
+                        <i class="fas fa-envelope fa-3x mb-3" style="color: var(--warm-brown);"></i>
+                        <h4>Email Us</h4>
+                        <p>info@sugarbites.com<br>orders@sugarbites.com</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Contact Form and Feedback -->
+<section class="py-5" style="background-color: var(--cream);">
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-6 mb-4">
+                <div class="card shadow-sm h-100">
+                    <div class="card-body p-4">
+                        <h3 style="color: var(--warm-brown);" class="mb-4">Send Us a Message</h3>
+                        <form method="POST" action="/contact/">
+                            {% csrf_token %}
+                            <input type="hidden" name="contact_submit" value="1">
+                            <div class="mb-3">
+                                <label for="name" class="form-label">Your Name *</label>
+                                <input type="text" class="form-control" id="name" name="name" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="email" class="form-label">Email Address *</label>
+                                <input type="email" class="form-control" id="email" name="email" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="message" class="form-label">Message *</label>
+                                <textarea class="form-control" id="message" name="message" rows="5" required></textarea>
+                            </div>
+                            <button type="submit" class="btn btn-primary w-100">Send Message</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-lg-6 mb-4">
+                <div class="card shadow-sm h-100">
+                    <div class="card-body p-4">
+                        <h3 style="color: var(--warm-brown);" class="mb-4">Leave Feedback</h3>
+                        <form method="POST" action="/contact/">
+                            {% csrf_token %}
+                            <input type="hidden" name="feedback_submit" value="1">
+                            <div class="mb-3">
+                                <label for="feedback_name" class="form-label">Your Name *</label>
+                                <input type="text" class="form-control" id="feedback_name" name="feedback_name" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="rating" class="form-label">Rating *</label>
+                                <select class="form-select" id="rating" name="rating" required>
+                                    <option value="">Select rating...</option>
+                                    <option value="5">⭐⭐⭐⭐⭐ - Excellent</option>
+                                    <option value="4">⭐⭐⭐⭐ - Very Good</option>
+                                    <option value="3">⭐⭐⭐ - Good</option>
+                                    <option value="2">⭐⭐ - Fair</option>
+                                    <option value="1">⭐ - Poor</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label for="feedback" class="form-label">Your Feedback *</label>
+                                <textarea class="form-control" id="feedback" name="feedback" rows="3" required></textarea>
+                            </div>
+                            <button type="submit" class="btn btn-outline-primary w-100">Submit Feedback</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Display Recent Feedback -->
+{% if feedbacks %}
+<section class="py-5">
+    <div class="container">
+        <h3 class="text-center mb-4" style="color: var(--warm-brown);">What Our Customers Say</h3>
+        <div class="row g-4">
+            {% for fb in feedbacks %}
+            <div class="col-md-4">
+                <div class="card shadow-sm h-100">
+                    <div class="card-body">
+                        <div class="mb-2">
+                            {% for i in "12345"|make_list %}
+                                {% if forloop.counter <= fb.rating %}
+                                    <i class="fas fa-star" style="color: #FFD700;"></i>
+                                {% else %}
+                                    <i class="far fa-star" style="color: #FFD700;"></i>
+                                {% endif %}
+                            {% endfor %}
+                        </div>
+                        <p class="card-text">"{{ fb.feedback|truncatewords:20 }}"</p>
+                        <h6 class="card-subtitle text-muted">- {{ fb.name }}</h6>
+                        <small class="text-muted">{{ fb.created_at|date:"F d, Y" }}</small>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endif %}
+
+<!-- Map Section -->
+<section class="py-5">
+    <div class="container">
+        <h3 class="text-center mb-4" style="color: var(--warm-brown);">Find Us Here</h3>
+        <div class="row justify-content-center">
+            <div class="col-lg-10">
+                <div class="card shadow-sm">
+                    <iframe 
+                        src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3024.2219901290355!2d-74.00369368400567!3d40.71312937933041!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x89c25a316bb3e3c5%3A0xb89d1fe6bc499443!2sBroadway%2C%20New%20York%2C%20NY%2C%20USA!5e0!3m2!1sen!2s!4v1641234567890!5m2!1sen!2s" 
+                        width="100%" 
+                        height="400" 
+                        style="border:0; border-radius: 10px;" 
+                        allowfullscreen="" 
+                        loading="lazy">
+                    </iframe>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- FAQ Section -->
+<section class="py-5" style="background-color: var(--cream);">
+    <div class="container">
+        <h3 class="text-center mb-5" style="color: var(--warm-brown);">Frequently Asked Questions</h3>
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <div class="accordion" id="faqAccordion">
+                    <div class="accordion-item">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#faq1">
+                                What are your business hours?
+                            </button>
+                        </h2>
+                        <div id="faq1" class="accordion-collapse collapse show" data-bs-parent="#faqAccordion">
+                            <div class="accordion-body">
+                                We are open Monday through Sunday from 9:00 AM to 9:00 PM.
+                            </div>
+                        </div>
+                    </div>
+                    <div class="accordion-item">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq2">
+                                Do you offer delivery?
+                            </button>
+                        </h2>
+                        <div id="faq2" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                            <div class="accordion-body">
+                                Yes! We offer delivery within 5 miles of our location. Delivery fee is $5.99.
+                            </div>
+                        </div>
+                    </div>
+                    <div class="accordion-item">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq3">
+                                Can I place a custom order for special occasions?
+                            </button>
+                        </h2>
+                        <div id="faq3" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                            <div class="accordion-body">
+                                Absolutely! Visit our Special Order page to submit your custom request. We'll contact you within 24 hours.
+                            </div>
+                        </div>
+                    </div>
+                    <div class="accordion-item">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq4">
+                                Do you cater for events?
+                            </button>
+                        </h2>
+                        <div id="faq4" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                            <div class="accordion-body">
+                                Yes! We offer catering services for birthdays, weddings, corporate events, and other special occasions. Contact us for a custom quote.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

@@ -1,0 +1,137 @@
+{% extends 'bakery/base.html' %}
+
+{% block title %}Checkout - Sugar Bites{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <h1 class="text-center mb-5" style="color: var(--warm-brown);">Checkout</h1>
+    
+    <div class="row">
+        <div class="col-lg-7">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h4>Shipping Information</h4>
+                    <hr>
+                    <form id="checkoutForm" method="POST">
+                        {% csrf_token %}
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Full Name *</label>
+                                <input type="text" class="form-control" id="fullName" name="customer_name" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Email Address *</label>
+                                <input type="email" class="form-control" id="email" name="email" required>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Phone Number *</label>
+                            <input type="tel" class="form-control" id="phone" name="phone" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Street Address *</label>
+                            <textarea class="form-control" id="address" name="address" rows="2" required></textarea>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">City *</label>
+                                <input type="text" class="form-control" id="city" name="city" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Zip Code *</label>
+                                <input type="text" class="form-control" id="zip" name="zip_code" required>
+                            </div>
+                        </div>
+                        <input type="hidden" name="cart_items" id="cartItems">
+                        <input type="hidden" name="total_amount" id="totalAmount">
+                        <button type="submit" class="btn btn-primary w-100" id="placeOrderBtn">Place Order</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-5">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h4>Your Order</h4>
+                    <hr>
+                    <div id="orderItems"></div>
+                    <hr>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Subtotal:</span>
+                        <span id="subtotal">$0.00</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Tax (10%):</span>
+                        <span id="tax">$0.00</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-3">
+                        <strong>Total:</strong>
+                        <strong id="total" style="color: var(--warm-brown); font-size: 1.3rem;">$0.00</strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function loadOrderSummary() {
+        let cart = localStorage.getItem('cart');
+        let orderItemsDiv = document.getElementById('orderItems');
+        
+        if (!cart || JSON.parse(cart).length === 0) {
+            window.location.href = '/cart/';
+            return;
+        }
+        
+        let cartItems = JSON.parse(cart);
+        let html = '';
+        let subtotal = 0;
+        
+        for (let i = 0; i < cartItems.length; i++) {
+            let item = cartItems[i];
+            let itemTotal = item.price * item.quantity;
+            subtotal += itemTotal;
+            html += `<div class="d-flex justify-content-between mb-2">
+                        <span>${item.name} x ${item.quantity}</span>
+                        <span>$${itemTotal.toFixed(2)}</span>
+                    </div>`;
+        }
+        
+        orderItemsDiv.innerHTML = html;
+        let tax = subtotal * 0.10;
+        let total = subtotal + tax;
+        
+        document.getElementById('subtotal').innerText = '$' + subtotal.toFixed(2);
+        document.getElementById('tax').innerText = '$' + tax.toFixed(2);
+        document.getElementById('total').innerText = '$' + total.toFixed(2);
+        
+        // Set hidden form values
+        document.getElementById('cartItems').value = JSON.stringify(cartItems);
+        // IMPORTANT FIX: Send SUBTOTAL (without tax) to database, not the total with tax
+        document.getElementById('totalAmount').value = subtotal.toFixed(2);
+    }
+    
+    // Handle form submission - Clear cart after order is placed
+    document.getElementById('checkoutForm').addEventListener('submit', function(e) {
+        // Clear cart from localStorage immediately
+        localStorage.removeItem('cart');
+        
+        // Update cart count in navbar if function exists
+        if (typeof updateCartCount !== 'undefined') {
+            updateCartCount();
+        }
+        
+        // Show loading message
+        let btn = document.getElementById('placeOrderBtn');
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+        btn.disabled = true;
+        
+        // Allow form to submit normally
+        return true;
+    });
+    
+    document.addEventListener('DOMContentLoaded', loadOrderSummary);
+</script>
+{% endblock %}

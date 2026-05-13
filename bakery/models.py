@@ -1,26 +1,51 @@
 from django.db import models
 from django.contrib.auth.models import User
-from django.db.models.signals import post_save
-from django.dispatch import receiver
+import os
+
+def get_product_image_path(instance, filename):
+    """Save images to category-specific folders"""
+    ext = filename.split('.')[-1]
+    new_filename = f"{instance.name.replace(' ', '-').lower()}.{ext}"
+    return f'products/{instance.category}/{new_filename}'
 
 class Product(models.Model):
     CATEGORY_CHOICES = [
-        ('cookies', 'Cookies'),
-        ('lattes', 'Lattes'),
-        ('waffles', 'Waffles'),
+        ('cookies', '🍪 Cookies'),
+        ('lattes', '☕ Lattes'),
+        ('waffles', '🧇 Waffles'),
+        ('cakes', '🎂 Cakes'),
+        ('drinks', '🥤 Drinks'),
+        ('pastries', '🥐 Pastries'),    # NEW
+        ('breads', '🍞 Breads'),         # NEW
     ]
     
-    name = models.CharField(max_length=100)
+    name = models.CharField(max_length=200)
     category = models.CharField(max_length=20, choices=CATEGORY_CHOICES)
     description = models.TextField()
-    price = models.DecimalField(max_digits=8, decimal_places=2)
-    image = models.ImageField(upload_to='products/', blank=True, null=True)
-    stock = models.IntegerField(default=0)
+    price = models.DecimalField(max_digits=10, decimal_places=2)
+    image = models.ImageField(upload_to=get_product_image_path, blank=True, null=True)
     is_best_seller = models.BooleanField(default=False)
+    stock = models.IntegerField(default=10)
     created_at = models.DateTimeField(auto_now_add=True)
     
     def __str__(self):
         return self.name
+    
+    def get_category_icon(self):
+        icons = {
+            'cookies': '🍪',
+            'lattes': '☕',
+            'waffles': '🧇',
+            'cakes': '🎂',
+            'drinks': '🥤',
+            'pastries': '🥐',
+            'breads': '🍞',
+        }
+        return icons.get(self.category, '📦')
+    
+    class Meta:
+        ordering = ['-created_at']
+
 
 class CartOrder(models.Model):
     STATUS_CHOICES = [
@@ -31,11 +56,11 @@ class CartOrder(models.Model):
     ]
     
     user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
-    customer_name = models.CharField(max_length=100)
+    customer_name = models.CharField(max_length=200)
     email = models.EmailField()
     phone = models.CharField(max_length=20)
     address = models.TextField()
-    city = models.CharField(max_length=50)
+    city = models.CharField(max_length=100)
     zip_code = models.CharField(max_length=20)
     items_json = models.TextField()
     total_amount = models.DecimalField(max_digits=10, decimal_places=2)
@@ -45,61 +70,47 @@ class CartOrder(models.Model):
     def __str__(self):
         return f"Order #{self.id} - {self.customer_name}"
 
+
 class SpecialOrder(models.Model):
     DELIVERY_CHOICES = [
         ('delivery', 'Delivery'),
         ('pickup', 'Pickup'),
     ]
     
-    name = models.CharField(max_length=100)
+    name = models.CharField(max_length=200)
     email = models.EmailField()
     phone = models.CharField(max_length=20)
     delivery_option = models.CharField(max_length=20, choices=DELIVERY_CHOICES)
     address = models.TextField(blank=True, null=True)
-    city = models.CharField(max_length=50, blank=True, null=True)
+    city = models.CharField(max_length=100, blank=True, null=True)
     zip_code = models.CharField(max_length=20, blank=True, null=True)
-    items_requested = models.TextField(help_text="Describe what you want to order")
+    items_requested = models.TextField(help_text="Describe what you want")
+    special_requests = models.TextField(blank=True, null=True)
+    preferred_date = models.DateField(blank=True, null=True)
     submitted_at = models.DateTimeField(auto_now_add=True)
+    is_processed = models.BooleanField(default=False)
     
     def __str__(self):
-        return f"Special Order - {self.name} - {self.submitted_at}"
+        return f"Special Order - {self.name} ({self.submitted_at.date()})"
+
 
 class ContactMessage(models.Model):
-    name = models.CharField(max_length=100)
+    name = models.CharField(max_length=200)
     email = models.EmailField()
     message = models.TextField()
+    is_read = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     
     def __str__(self):
-        return f"Message from {self.name}"
+        return f"Message from {self.name} - {self.created_at.date()}"
+
 
 class Feedback(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
-    name = models.CharField(max_length=100)
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+    name = models.CharField(max_length=200)
     feedback = models.TextField()
-    rating = models.IntegerField(default=5)
+    rating = models.IntegerField(choices=[(1, '1 Star'), (2, '2 Stars'), (3, '3 Stars'), (4, '4 Stars'), (5, '5 Stars')])
     created_at = models.DateTimeField(auto_now_add=True)
     
     def __str__(self):
-        return f"Feedback from {self.name} - {self.rating} stars"
-
-class Profile(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
-    mobile = models.CharField(max_length=15, blank=True, null=True)
-    address = models.TextField(blank=True, null=True)
-    
-    def __str__(self):
-        return f"{self.user.username}'s Profile"
-
-# Signals to auto-create profile
-@receiver(post_save, sender=User)
-def create_user_profile(sender, instance, created, **kwargs):
-    if created:
-        Profile.objects.create(user=instance)
-
-@receiver(post_save, sender=User)
-def save_user_profile(sender, instance, **kwargs):
-    if not hasattr(instance, 'profile'):
-        Profile.objects.create(user=instance)
-    else:
-        instance.profile.save()
+        return f"Feedback by {self.name} - {self.rating} stars"

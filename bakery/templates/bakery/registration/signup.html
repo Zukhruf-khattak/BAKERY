@@ -1,0 +1,58 @@
+{% extends 'bakery/base.html' %}
+
+{% block title %}Sign Up - Sugar Bites{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow-sm">
+                <div class="card-body p-5">
+                    <h2 class="text-center mb-4" style="color: var(--warm-brown);">Create an Account</h2>
+                    
+                    <form method="POST" action="/signup/">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label for="username" class="form-label">Username</label>
+                            <input type="text" name="username" class="form-control" id="username" required>
+                            <small class="text-muted">Required. 150 characters or fewer.</small>
+                        </div>
+                        <div class="mb-3">
+                            <label for="password1" class="form-label">Password</label>
+                            <input type="password" name="password1" class="form-control" id="password1" required>
+                            <small class="text-muted">Your password must contain at least 8 characters.</small>
+                        </div>
+                        <div class="mb-3">
+                            <label for="password2" class="form-label">Confirm Password</label>
+                            <input type="password" name="password2" class="form-control" id="password2" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100">Sign Up</button>
+                    </form>
+                    
+                    <hr class="my-4">
+                    
+                    <p class="text-center mb-0">
+                        Already have an account? <a href="/login/" style="color: var(--warm-brown);">Login Here</a>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Client-side validation
+    document.querySelector('form').addEventListener('submit', function(e) {
+        let password1 = document.getElementById('password1').value;
+        let password2 = document.getElementById('password2').value;
+        
+        if (password1 !== password2) {
+            e.preventDefault();
+            alert('Passwords do not match!');
+        } else if (password1.length < 8) {
+            e.preventDefault();
+            alert('Password must be at least 8 characters long!');
+        }
+    });
+</script>
+{% endblock %}
